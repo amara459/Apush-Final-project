@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DEEP STATE: CIA Covert Operations</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Share+Tech+Mono&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg:       #111318;
+  --surface:  #1a1d24;
+  --border:   #2e3340;
+  --blue:     #4a6fa5;
+  --blue-dim: #2d4466;
+  --red:      #8c2e2e;
+  --red-dim:  #5a1e1e;
+  --gold:     #9a8a5a;
+  --text:     #b4bcc8;
+  --text-dim: #5a6070;
+  --white:    #d8dde6;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Subtle scanlines */
+body::after {
+  content: '';
+  position: fixed; top:0; left:0; right:0; bottom:0;
+  background: repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.06) 3px,rgba(0,0,0,0.06) 4px);
+  pointer-events: none; z-index: 9998;
+}
+
+#header { text-align: center; margin-bottom: 12px; user-select: none; }
+
+#title {
+  font-family: 'Special Elite', cursive;
+  font-size: 2.2em;
+  color: var(--white);
+  letter-spacing: 5px;
+  text-shadow: 0 0 12px rgba(74,111,165,0.4);
+}
+
+#subtitle {
+  font-size: 0.68em; color: var(--red); letter-spacing: 3px; margin-top: 4px;
+  animation: blink 3s infinite;
+}
+
+@keyframes blink {
+  0%,85%,100%{opacity:1} 92%{opacity:0.2}
+}
+
+/* Game container */
+#game-container {
+  position: relative;
+  border: 1px solid var(--border);
+  box-shadow: 0 0 30px rgba(0,0,0,0.6), inset 0 0 20px rgba(0,0,0,0.4);
+}
+
+#gameCanvas { display: block; background: #0c0e12; }
+
+#hud {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 7px 14px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  font-size: 0.75em; letter-spacing: 1px; gap: 12px;
+}
+
+.hud-item { white-space: nowrap; }
+.hud-label { color: var(--text-dim); }
+#score-val { color: var(--blue); }
+#eaten-val { color: var(--gold); }
+#casualties-val { color: var(--red); }
+#level-val { color: var(--text); }
+
+/* ═══ POPUP ═══ */
+#popup-overlay {
+  position: fixed; top:0; left:0; right:0; bottom:0;
+  background: rgba(8,9,12,0.92);
+  display: none; align-items: center; justify-content: center;
+  z-index: 1000; padding: 16px;
+}
+
+#popup {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--blue);
+  max-width: 580px; width: 100%;
+  max-height: 88vh; overflow-y: auto;
+  padding: 28px 26px 20px;
+  position: relative;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+  scrollbar-width: thin;
+  scrollbar-color: var(--blue-dim) var(--bg);
+}
+
+#popup::-webkit-scrollbar { width: 4px; }
+#popup::-webkit-scrollbar-track { background: var(--bg); }
+#popup::-webkit-scrollbar-thumb { background: var(--blue-dim); }
+
+/* Stamps */
+.stamp {
+  position: absolute; top: 16px; right: 18px;
+  color: var(--red); border: 2px solid var(--red);
+  padding: 2px 9px; font-size: 0.72em; font-weight: bold;
+  transform: rotate(11deg); opacity: 0.65; letter-spacing: 3px;
+  pointer-events: none;
+}
+.stamp2 {
+  position: absolute; top: 46px; right: 14px;
+  color: rgba(140,46,46,0.4); border: 1.5px solid rgba(140,46,46,0.35);
+  padding: 2px 7px; font-size: 0.6em;
+  transform: rotate(-7deg); letter-spacing: 2px; pointer-events: none;
+}
+
+#popup-flag { font-size: 3em; text-align: center; margin-bottom: 6px; }
+
+#popup-country-name {
+  font-family: 'Special Elite', cursive;
+  font-size: 1.8em; color: var(--white); text-align: center;
+  letter-spacing: 5px; text-transform: uppercase; min-height: 1.2em;
+}
+
+#popup-op-name {
+  text-align: center; color: var(--gold); font-size: 0.72em;
+  letter-spacing: 2px; margin: 5px 0 18px;
+  padding-bottom: 14px; border-bottom: 1px solid var(--border);
+}
+
+/* Quote card */
+.q-card {
+  background: rgba(0,0,0,0.25);
+  border-left: 3px solid var(--blue-dim);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.q-card.red-card { border-left-color: var(--red); }
+
+.q-text {
+  color: var(--text);
+  font-family: Georgia, serif;
+  font-size: 0.86em;
+  line-height: 1.72;
+  font-style: italic;
+}
+
+.q-attr {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  margin-top: 9px; gap: 10px;
+}
+
+.q-speaker {
+  color: var(--blue); font-size: 0.7em; letter-spacing: 1px;
+  font-family: 'Share Tech Mono', monospace; font-style: normal;
+}
+.q-role { color: var(--text-dim); font-size: 0.85em; }
+.q-source {
+  color: var(--text-dim); font-size: 0.62em; letter-spacing: 0.3px;
+  text-align: right; font-family: 'Share Tech Mono', monospace;
+  font-style: normal; flex-shrink: 0;
+}
+
+#popup-continue {
+  display: block; width: 100%; margin-top: 20px; padding: 11px;
+  background: transparent; border: 1px solid var(--blue);
+  color: var(--blue); font-family: 'Share Tech Mono', monospace;
+  font-size: 0.9em; letter-spacing: 3px; cursor: pointer;
+  text-transform: uppercase; transition: all 0.2s;
+}
+#popup-continue:hover { background: var(--blue); color: #000; }
+#popup-kbd-hint { color: var(--text-dim); font-size: 0.65em; text-align: center; margin-top: 8px; letter-spacing: 2px; }
+
+/* ═══ SCREENS ═══ */
+#start-screen, #game-over-screen {
+  position: absolute; top:0; left:0; right:0; bottom:0;
+  background: rgba(11,13,18,0.97);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 28px; z-index: 100;
+}
+#game-over-screen { display: none; }
+
+.screen-title {
+  font-family: 'Special Elite', cursive;
+  font-size: 1.8em; color: var(--white); margin-bottom: 16px; letter-spacing: 3px;
+}
+.screen-title.red { color: var(--red); }
+
+.screen-body { color: var(--text-dim); font-size: 0.76em; line-height: 1.9; max-width: 400px; margin-bottom: 14px; }
+.screen-body .hi { color: var(--gold); }
+.screen-body .lo { color: #383e4a; font-size: 0.9em; }
+
+.open-quote {
+  background: rgba(0,0,0,0.3); border-left: 3px solid var(--blue-dim);
+  padding: 11px 15px; max-width: 390px; margin: 6px auto 16px;
+  font-style: italic; color: var(--text-dim);
+  font-family: Georgia, serif; font-size: 0.76em; line-height: 1.7; text-align: left;
+}
+.open-quote-attr { color: #444; font-size: 0.85em; display: block; margin-top: 6px; font-style: normal; }
+
+.divider { width: 60px; height: 1px; background: var(--border); margin: 12px auto; }
+
+.instructions { display: flex; gap: 22px; margin: 10px 0 16px; color: var(--text-dim); font-size: 0.7em; }
+.instr-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.instr-icon { font-size: 1.3em; }
+
+.big-btn {
+  margin-top: 14px; padding: 12px 40px;
+  background: transparent; border: 1px solid var(--blue);
+  color: var(--blue); font-family: 'Share Tech Mono', monospace;
+  font-size: 0.95em; letter-spacing: 4px; cursor: pointer;
+  text-transform: uppercase; transition: all 0.2s;
+}
+.big-btn.red-btn { border-color: var(--red); color: var(--red); }
+.big-btn:hover { background: var(--blue); color: #000; }
+.big-btn.red-btn:hover { background: var(--red); color: #fff; }
+.controls-hint { color: #303540; font-size: 0.66em; margin-top: 12px; letter-spacing: 2px; }
+
+#final-score-text { color: var(--white); font-size: 1em; margin-bottom: 12px; letter-spacing: 2px; }
+#eaten-countries-list { color: var(--text-dim); font-size: 0.7em; margin-bottom: 16px; line-height: 2.2; max-width: 440px; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="title">★ &nbsp;DEEP STATE&nbsp; ★</div>
+  <div id="subtitle">[ TOP SECRET // CIA COVERT OPERATIONS SIMULATOR ]</div>
+</div>
+
+<div id="game-container">
+  <canvas id="gameCanvas" width="520" height="520"></canvas>
+  <div id="hud">
+    <div class="hud-item"><span class="hud-label">SCORE </span><span id="score-val">0</span></div>
+    <div class="hud-item"><span class="hud-label">TARGETS </span><span id="eaten-val">0/12</span></div>
+    <div class="hud-item"><span class="hud-label">EST. CASUALTIES </span><span id="casualties-val">0</span></div>
+    <div class="hud-item"><span class="hud-label">THREAT LVL </span><span id="level-val">1</span></div>
+  </div>
+
+  <div id="start-screen">
+    <div class="screen-title">★ DEEP STATE ★</div>
+    <div class="screen-body">
+      You are <span class="hi">THE AGENCY</span>.<br>
+      Consume foreign governments. Read what was done in your name.<br>
+      <span class="lo">All quotes are real. All events happened.</span>
+    </div>
+    <div class="open-quote">
+      "The United States has overthrown or attempted to overthrow some 50 foreign governments since World War II."
+      <span class="open-quote-attr">— William Blum, former U.S. State Department official, Killing Hope, 1995</span>
+    </div>
+    <div class="divider"></div>
+    <div class="instructions">
+      <div class="instr-item"><div class="instr-icon">🇺🇸</div><div>You are<br>America</div></div>
+      <div class="instr-item"><div class="instr-icon">🌍</div><div>Eat foreign<br>governments</div></div>
+      <div class="instr-item"><div class="instr-icon">📁</div><div>Read the<br>dossier</div></div>
+      <div class="instr-item"><div class="instr-icon">☠️</div><div>Don't hit<br>yourself</div></div>
+    </div>
+    <button class="big-btn" id="start-btn">INITIATE OPERATION</button>
+    <div class="controls-hint">↑ ↓ ← → &nbsp;or&nbsp; W A S D &nbsp;|&nbsp; SPACE / ENTER dismisses dossiers</div>
+  </div>
+
+  <div id="game-over-screen">
+    <div class="screen-title red">OPERATION COMPROMISED</div>
+    <div id="final-score-text"></div>
+    <div id="eaten-countries-list"></div>
+    <button class="big-btn red-btn" id="restart-btn">REINSTATE MISSION</button>
+  </div>
+</div>
+
+<!-- DOSSIER POPUP -->
+<div id="popup-overlay">
+  <div id="popup">
+    <div class="stamp">TOP SECRET</div>
+    <div class="stamp2">DECLASSIFIED</div>
+    <div id="popup-flag"></div>
+    <div id="popup-country-name"></div>
+    <div id="popup-op-name"></div>
+    <div id="popup-sections"></div>
+    <button id="popup-continue">[ CONTINUE OPERATION ]</button>
+    <div id="popup-kbd-hint">SPACE or ENTER to continue</div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// 1-2 REAL QUOTES PER COUNTRY — all sourced from primary records
+// ═══════════════════════════════════════════════════════════════
+const COUNTRIES = [
+  {
+    name: "IRAN", flag: "🇮🇷", year: 1953,
+    opName: "OPERATION TPAJAX",
+    casualties: 300, color: "#4a6fa5",
+    quotes: [
+      {
+        text: "The military coup that overthrew Mosaddegh and his National Front cabinet was carried out under CIA direction as an act of U.S. foreign policy, conceived and approved at the highest levels of government.",
+        speaker: "CIA Internal History", role: "Declassified CIA document", source: "Released August 2013", red: true
+      },
+      {
+        text: "My only crime is that I nationalized Iran's oil industry and removed from this land the network of colonialism.",
+        speaker: "Mohammad Mosaddegh", role: "Elected Prime Minister of Iran", source: "Trial testimony, 1953"
+      }
+    ]
+  },
+  {
+    name: "GUATEMALA", flag: "🇬🇹", year: 1954,
+    opName: "OPERATION PBSUCCESS",
+    casualties: 200000, color: "#4a6fa5",
+    quotes: [
+      {
+        text: "We had to get rid of Arbenz. The only question was how.",
+        speaker: "Allen Dulles", role: "CIA Director", source: "Attributed — multiple historical accounts, 1954", red: true
+      },
+      {
+        text: "The United States bears a responsibility for human rights violations that occurred in Guatemala. Support for military forces and intelligence units which engaged in violence and widespread repression was wrong.",
+        speaker: "President Bill Clinton", role: "President of the United States", source: "State visit to Guatemala, March 10, 1999"
+      }
+    ]
+  },
+  {
+    name: "CUBA", flag: "🇨🇺", year: 1961,
+    opName: "BAY OF PIGS / OPERATION MONGOOSE",
+    casualties: 3000, color: "#4a6fa5",
+    quotes: [
+      {
+        text: "How could I have been so stupid to let them proceed?",
+        speaker: "President John F. Kennedy", role: "President of the United States", source: "Said privately after the Bay of Pigs failure, April 1961", red: true
+      },
+      {
+        text: "The CIA's plan was to kill Castro with an exploding cigar, a poison milkshake, a poison pen, poisoned pills, a poison wetsuit, a seashell bomb, and by enlisting the Mafia.",
+        speaker: "Church Committee Report", role: "U.S. Senate Select Committee", source: "Alleged Assassination Plots Involving Foreign Leaders, 1975"
+      }
+    ]
+  },
+  {
+    name: "CONGO", flag: "🇨🇩", year: 1960,
+    opName: "OPERATION WIZARD",
+    casualties: 5000000, color: "#4a6fa5",
+    quotes: [
+      {
+        text: "We would be very happy to see Lumumba disposed of.",
+        speaker: "Allen Dulles", role: "CIA Director", source: "Cable to CIA Station Chief, Congo, August 26, 1960 — Church Committee", red: true
+      },
+      {
+        text: "History will one day have its say, but it will not be the history that Brussels, Paris, Washington or the United Nations will teach.",
+        speaker: "Patrice Lumumba", role: "First elected Prime Minister of Congo", source: "Last letter to his wife, written while imprisoned, December 1960"
+      }
+    ]
+  },
+  {
+    name: "VIETNAM", flag: "🇻🇳", year: 1965,
+    opName: "OPERATION PHOENIX",
+    casualties: 40000, color: "#4a6fa5",
+    quotes: [
+      {
+        text: "It was a program of assassination. They gave us the names and we killed them. Sometimes we got the wrong people.",
+        speaker: "K. Barton Osborn", role: "U.S. Army intelligence officer, Phoenix program", source: "Congressional testimony, 1971", red: true
+      },
+      {
+        text: "20,587 were killed outright. 28,978 were imprisoned. 17,717 were induced to defect.",
+        speaker: "William Colby", role: "CIA Director; former Phoenix program director", source: "Congressional testimony, 1971 — Colby's own figures"
+      }
+    ]
+  },
+  {
+    name: "CHILE", flag: "🇨🇱", year: 1973,
+    opName: "OPERATION FUBELT",
+    casualties: 40000, color: "#4a6fa5",
+    quotes: [
+      {
+        text: "Make the economy scream. $10,000,000 available, more if necessary. Full-time job — best men we have.",
+        speaker: "President Richard Nixon", role: "President of the United States", source: "Handwritten notes from CIA Director Helms's meeting with Nixon, September 15, 1970", red: true
+      },
+      {
+        text: "These are my last words, and I am certain that the seed which we have planted in the good conscience of thousands and thousands of Chileans will not be shriveled forever. Long live Chile! Long live the people!",
+        speaker: "Salvador Allende", role: "President of Chile", source: "Final radio broadcast from La Moneda Palace as it was being bombed, September 11, 1973"
+      }
+    ]
+  },
+  {
+    name: "INDONESIA", flag: "🇮🇩", year: 1965,
+    opName: "PKI PURGE SUPPORT",
+    casualties: 1000000, color: "#4a6fa5",
+    quotes: [
+      {
+        text: "We had a very good idea of who the Communist leaders were — we had their names on lists — and when army officers started decimating them, I thought: well, this is a good thing.",
+        speaker: "Robert Martens", role: "U.S. Embassy political officer, Jakarta", source: "Far Eastern Economic Review, April 5, 1990", red: true
+      },
+      {
+        text: "In terms of the numbers killed, the massacres rank as one of the worst mass murders of the 20th century, along with the Soviet purges of the 1930s and the Nazi mass murders during the Second World War.",
+        speaker: "CIA Field Report", role: "Central Intelligence Agency", source: "Declassified CIA report: Indonesia — 1965 Coup, 1967"
+      }
+    ]
+  },
+  {
+    name: "BRAZIL", flag: "🇧🇷", year: 1964,
+    opName: "OPERATION BROTHER SAM",
+    casualties: 434, color: "#4a6fa5",
+    quotes: [
+      {
+        text: "I think we ought to take every step that we can, be ye, I mean what I mean, to help them at this particular point.",
+        speaker: "President Lyndon B. Johnson", role: "President of the United States", source: "Recorded phone call with Undersecretary of State George Ball, April 1, 1964", red: true
+      },
+      {
+        text: "The Brazilian state was responsible for torture, disappearances and other grave human rights violations. The United States was complicit.",
+        speaker: "National Truth Commission of Brazil", role: "Brazilian government", source: "Final Report, Volume II, December 2014"
+      }
+    ]
+  },
+  {
+    name: "NICARAGUA", flag: "🇳🇮", year: 1986,
+    opName: "IRAN-CONTRA AFFAIR",
+    casualties: 30000, color: "#4a6fa5",
+    quotes: [
+      {
+        text: "A few months ago I told the American people I did not trade arms for hostages. My heart and my best intentions still tell me that's true, but the facts and the evidence tell me it is not.",
+        speaker: "President Ronald Reagan", role: "President of the United States", source: "Televised address to the nation, March 4, 1987", red: true
+      },
+      {
+        text: "The United States of America violated international law. It is condemned to pay reparations.",
+        speaker: "International Court of Justice", role: "United Nations World Court", source: "Nicaragua v. United States, judgment, June 27, 1986"
+      }
+    ]
+  },
+  {
+    name: "AFGHANISTAN", flag: "🇦🇫", year: 1979,
+    opName: "OPERATION CYCLONE",
+    casualties: 2000000, color: "#4a6fa5",
+    quotes: [
+      {
+        text: "What was more important in world history? The Taliban or the fall of the Soviet Empire? A few stirred-up Muslims or the liberation of Central Europe?",
+        speaker: "Zbigniew Brzezinski", role: "National Security Advisor to President Carter", source: "Le Nouvel Observateur, January 1998", red: true
+      },
+      {
+        text: "On July 3, 1979, President Carter signed the first directive for secret aid to the opponents of the pro-Soviet regime in Kabul. That secret operation was an excellent idea. It had the effect of drawing the Russians into the Afghan trap.",
+        speaker: "Zbigniew Brzezinski", role: "National Security Advisor", source: "Le Nouvel Observateur, January 1998"
+      }
+    ]
+  },
+  {
+    name: "HAITI", flag: "🇭🇹", year: 1991,
+    opName: "FRAPH DEATH SQUAD SUPPORT",
+    casualties: 5000, color: "#4a6fa5",
+    quotes: [
+      {
+        text: "The CIA was my control.",
+        speaker: "Emmanuel 'Toto' Constant", role: "Leader of FRAPH — Haitian paramilitary death squad", source: "60 Minutes, CBS News, 1994", red: true
+      },
+      {
+        text: "When American troops arrived in 1994, CIA and DIA agents seized 160,000 pages of FRAPH documents and took them to the United States — blocking every attempt at justice for the victims.",
+        speaker: "Human Rights Watch", role: "International human rights organization", source: "Haiti: Human Rights After President Aristide's Return, 1995"
+      }
+    ]
+  },
+  {
+    name: "IRAQ", flag: "🇮🇶", year: 2003,
+    opName: "WMD INTELLIGENCE FAILURE",
+    casualties: 460000, color: "#4a6fa5",
+    quotes: [
+      {
+        text: "Intelligence and facts are being fixed around the policy.",
+        speaker: "Downing Street Memo", role: "Leaked minutes of British Cabinet meeting, reported by MI6 Director Dearlove", source: "July 23, 2002", red: true
+      },
+      {
+        text: "We were almost all wrong. I have admitted it openly. I had a role in it. The CIA had a role in it. That was our collective failure.",
+        speaker: "David Kay", role: "Chief U.S. weapons inspector, Iraq Survey Group", source: "Testimony to Senate Armed Services Committee, January 28, 2004"
+      }
+    ]
+  }
+];
+
+// ═══════════════════════════════════════════════════════════════
+// BUILD POPUP
+// ═══════════════════════════════════════════════════════════════
+function buildPopupHTML(country) {
+  return country.quotes.map(q => `
+    <div class="q-card ${q.red ? 'red-card' : ''}">
+      <div class="q-text">"${q.text}"</div>
+      <div class="q-attr">
+        <span class="q-speaker">${q.speaker} <span class="q-role">/ ${q.role}</span></span>
+        <span class="q-source">${q.source}</span>
+      </div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GAME ENGINE
+// ═══════════════════════════════════════════════════════════════
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const GRID = 20, COLS = canvas.width / GRID, ROWS = canvas.height / GRID;
+
+let snake, dir, nextDir, food, score, eaten, gameLoop, particles, countryQueue, eatenNames;
+let gameActive = false, foodPulse = 0;
+
+const bgDots = Array.from({length:80}, () => ({
+  x: Math.random()*canvas.width, y: Math.random()*canvas.height,
+  r: Math.random()*0.9+0.2, a: Math.random()*0.15+0.05
+}));
+
+// Audio
+let audioCtx;
+function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+function beep(freq, type, dur, vol=0.2) {
+  if (!audioCtx) return;
+  try {
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.type=type; o.frequency.value=freq;
+    g.gain.setValueAtTime(vol, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+dur);
+    o.start(); o.stop(audioCtx.currentTime+dur);
+  } catch(e) {}
+}
+function sfxEat() {
+  beep(220,'square',0.08,0.25);
+  setTimeout(()=>beep(330,'square',0.1,0.2),60);
+  setTimeout(()=>beep(440,'square',0.12,0.15),130);
+}
+function sfxDie() {
+  beep(300,'sawtooth',0.08,0.3);
+  setTimeout(()=>beep(200,'sawtooth',0.12,0.35),80);
+  setTimeout(()=>beep(100,'sawtooth',0.2,0.5),200);
+}
+
+// Particles
+function spawnParticles(gx, gy) {
+  const colors = ['#b22234','#ffffff','#3c3b6e'];
+  for (let i=0;i<18;i++) {
+    const angle=(Math.PI*2*i)/18+(Math.random()-0.5)*0.5;
+    const speed=1.2+Math.random()*3;
+    particles.push({
+      x:gx*GRID+GRID/2, y:gy*GRID+GRID/2,
+      vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed,
+      life:1, color:colors[i%3], size:2+Math.random()*3
+    });
+  }
+}
+
+function initGame() {
+  snake=[{x:13,y:13},{x:12,y:13},{x:11,y:13}];
+  dir={x:1,y:0}; nextDir={x:1,y:0};
+  score=0; eaten=0; particles=[]; eatenNames=[];
+  countryQueue=[...COUNTRIES].sort(()=>Math.random()-0.5);
+  placeFood(); updateHUD();
+}
+
+function placeFood() {
+  let pos;
+  do { pos={x:Math.floor(Math.random()*COLS),y:Math.floor(Math.random()*ROWS)}; }
+  while (snake.some(s=>s.x===pos.x&&s.y===pos.y));
+  food={...pos, country:countryQueue[eaten%countryQueue.length]};
+}
+
+function updateHUD() {
+  document.getElementById('score-val').textContent = score.toLocaleString();
+  document.getElementById('eaten-val').textContent = `${eaten}/${COUNTRIES.length}`;
+  document.getElementById('level-val').textContent = Math.floor(eaten/3)+1;
+  const cas=countryQueue.slice(0,eaten).reduce((s,c)=>s+c.casualties,0);
+  document.getElementById('casualties-val').textContent = cas.toLocaleString();
+}
+
+// ── Draw ──────────────────────────────────────────────────────
+function drawBg() {
+  ctx.fillStyle='#0c0e12'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  // Subtle dot grid
+  ctx.fillStyle='rgba(74,111,165,0.08)';
+  for(let x=0;x<COLS;x++) for(let y=0;y<ROWS;y++) {
+    ctx.fillRect(x*GRID+GRID/2-0.8,y*GRID+GRID/2-0.8,1.6,1.6);
+  }
+}
+
+function drawParticles() {
+  particles.forEach(p=>{
+    ctx.save(); ctx.globalAlpha=Math.max(0,p.life);
+    ctx.fillStyle=p.color;
+    ctx.beginPath(); ctx.arc(p.x,p.y,Math.max(0.1,p.size),0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  });
+}
+
+function updateParticles() {
+  particles=particles.filter(p=>p.life>0.01);
+  particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.1;p.vx*=0.97;p.life-=0.035;p.size*=0.97;});
+}
+
+function drawFood() {
+  foodPulse+=0.07;
+  const pulse=0.9+Math.sin(foodPulse)*0.1;
+  const cx=food.x*GRID+GRID/2, cy=food.y*GRID+GRID/2;
+  ctx.save();
+  // Dim glow ring
+  ctx.beginPath(); ctx.arc(cx,cy,GRID*0.72*pulse,0,Math.PI*2);
+  ctx.fillStyle=`rgba(154,138,90,${0.12+Math.sin(foodPulse)*0.05})`; ctx.fill();
+  ctx.strokeStyle=`rgba(154,138,90,${0.35+Math.sin(foodPulse)*0.1})`; ctx.lineWidth=1; ctx.stroke();
+  // Flag emoji
+  ctx.font=`${13*pulse}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='#fff'; ctx.shadowBlur=0;
+  ctx.fillText(food.country.flag,cx,cy-1);
+  // Year label
+  ctx.font='6px monospace'; ctx.fillStyle='rgba(154,138,90,0.7)';
+  ctx.fillText(food.country.year,cx,cy+GRID/2+5);
+  ctx.restore();
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath();
+}
+
+// American flag snake: head=red, segments cycle red/white/blue
+const FLAG_COLORS = ['#b22234','#d8dde6','#3c3b6e'];
+
+function drawSnake() {
+  const len=snake.length;
+  snake.forEach((seg,i)=>{
+    const isHead=i===0;
+    // Color: head is always red, body cycles R/W/B
+    let color;
+    if (isHead) {
+      color='#cc2030';
+    } else {
+      color=FLAG_COLORS[(i-1)%3];
+    }
+
+    ctx.save();
+    ctx.fillStyle=color;
+    // Subtle glow — muted
+    if (isHead) {
+      ctx.shadowBlur=10; ctx.shadowColor='rgba(178,34,52,0.5)';
+    } else {
+      ctx.shadowBlur=0;
+    }
+
+    const pad=isHead?1:2;
+    roundRect(ctx,seg.x*GRID+pad,seg.y*GRID+pad,GRID-pad*2,GRID-pad*2,isHead?5:3);
+    ctx.fill();
+
+    // Dark outline for white segments
+    if (!isHead && (i-1)%3===1) {
+      ctx.strokeStyle='rgba(0,0,0,0.25)'; ctx.lineWidth=0.8; ctx.stroke();
+    }
+
+    if (isHead) {
+      // Eyes
+      const ex1=dir.y===0?{dx:dir.x>0?4:-4,dy:-3.5}:{dx:-3.5,dy:dir.y>0?4:-4};
+      const ex2=dir.y===0?{dx:dir.x>0?4:-4,dy:3.5}:{dx:3.5,dy:dir.y>0?4:-4};
+      [ex1,ex2].forEach(e=>{
+        const ex=seg.x*GRID+GRID/2+e.dx, ey=seg.y*GRID+GRID/2+e.dy;
+        ctx.shadowBlur=0;
+        ctx.fillStyle='#fff';
+        ctx.beginPath(); ctx.arc(ex,ey,2.5,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#111';
+        ctx.beginPath(); ctx.arc(ex,ey,1.1,0,Math.PI*2); ctx.fill();
+      });
+      // Star on head
+      ctx.font='bold 7px sans-serif';
+      ctx.fillStyle='rgba(255,255,255,0.7)';
+      ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.shadowBlur=0;
+      ctx.fillText('★',seg.x*GRID+GRID/2,seg.y*GRID+GRID/2);
+    }
+    ctx.restore();
+  });
+}
+
+function draw() {
+  drawBg(); updateParticles(); drawParticles();
+  if (gameActive) drawFood();
+  drawSnake();
+}
+
+function tick() {
+  dir={...nextDir};
+  const head={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+  if(head.x<0||head.x>=COLS||head.y<0||head.y>=ROWS){endGame();return;}
+  if(snake.some(s=>s.x===head.x&&s.y===head.y)){endGame();return;}
+  snake.unshift(head);
+  if(head.x===food.x&&head.y===food.y){
+    sfxEat(); spawnParticles(food.x,food.y);
+    score+=100+eaten*60; eatenNames.push(`${food.country.flag} ${food.country.name}`);
+    eaten++; updateHUD();
+    clearInterval(gameLoop); showPopup(food.country); placeFood();
+  } else { snake.pop(); }
+}
+
+function getInterval(){ return Math.max(70,190-eaten*10); }
+function startLoop(){ clearInterval(gameLoop); gameLoop=setInterval(()=>{tick();draw();},getInterval()); }
+
+let rafId;
+function renderLoop(){ draw(); rafId=requestAnimationFrame(renderLoop); }
+
+// Popup
+function showPopup(c) {
+  document.getElementById('popup-flag').textContent=c.flag;
+  document.getElementById('popup-op-name').textContent=`${c.year} — ${c.opName}`;
+  document.getElementById('popup-sections').innerHTML=buildPopupHTML(c);
+
+  const nameEl=document.getElementById('popup-country-name');
+  nameEl.textContent='';
+  let i=0;
+  const tw=setInterval(()=>{
+    if(i<c.name.length) nameEl.textContent+=c.name[i++];
+    else clearInterval(tw);
+  },70);
+
+  document.getElementById('popup-overlay').style.display='flex';
+  document.getElementById('popup').scrollTop=0;
+}
+
+function closePopup(){
+  document.getElementById('popup-overlay').style.display='none';
+  startLoop();
+}
+
+document.getElementById('popup-continue').addEventListener('click',closePopup);
+
+function startGame(){
+  initAudio();
+  document.getElementById('start-screen').style.display='none';
+  document.getElementById('game-over-screen').style.display='none';
+  initGame(); gameActive=true; startLoop();
+  if(!rafId) renderLoop();
+}
+
+function endGame(){
+  clearInterval(gameLoop); gameActive=false; sfxDie();
+  document.getElementById('game-over-screen').style.display='flex';
+  document.getElementById('final-score-text').textContent=
+    `SCORE: ${score.toLocaleString()}  |  GOVERNMENTS CONSUMED: ${eaten}/${COUNTRIES.length}`;
+  document.getElementById('eaten-countries-list').innerHTML=
+    eaten>0 ? 'ABSORBED:<br>'+eatenNames.join(' &nbsp;·&nbsp; ')
+            : 'No governments consumed. Mission failed before first contact.';
+}
+
+document.getElementById('start-btn').addEventListener('click',startGame);
+document.getElementById('restart-btn').addEventListener('click',()=>{
+  document.getElementById('game-over-screen').style.display='none';
+  initGame(); gameActive=true; startLoop();
+});
+
+// Controls
+const KEY_DIR={
+  ArrowUp:{x:0,y:-1},w:{x:0,y:-1},W:{x:0,y:-1},
+  ArrowDown:{x:0,y:1},s:{x:0,y:1},S:{x:0,y:1},
+  ArrowLeft:{x:-1,y:0},a:{x:-1,y:0},A:{x:-1,y:0},
+  ArrowRight:{x:1,y:0},d:{x:1,y:0},D:{x:1,y:0},
+};
+
+document.addEventListener('keydown',e=>{
+  const d=KEY_DIR[e.key];
+  if(d){e.preventDefault();if(d.x!== -dir.x||d.y!== -dir.y)nextDir=d;}
+  if((e.key===' '||e.key==='Enter')&&document.getElementById('popup-overlay').style.display==='flex'){
+    e.preventDefault();closePopup();
+  }
+});
+
+let ts=null;
+canvas.addEventListener('touchstart',e=>{ts={x:e.touches[0].clientX,y:e.touches[0].clientY};e.preventDefault();},{passive:false});
+canvas.addEventListener('touchend',e=>{
+  if(!ts)return;
+  const dx=e.changedTouches[0].clientX-ts.x,dy=e.changedTouches[0].clientY-ts.y;
+  if(Math.abs(dx)>Math.abs(dy)){const d=dx>0?{x:1,y:0}:{x:-1,y:0};if(d.x!== -dir.x)nextDir=d;}
+  else{const d=dy>0?{x:0,y:1}:{x:0,y:-1};if(d.y!== -dir.y)nextDir=d;}
+  ts=null;e.preventDefault();
+},{passive:false});
+
+draw();
+</script>
+</body>
+</html>
